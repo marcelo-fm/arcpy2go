@@ -1,41 +1,53 @@
 package web
 
 import (
+	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
-	"github.com/rs/zerolog/log"
+	"github.com/marcelo-fm/arcpy2go/gen"
 )
 
 const (
-	HeaderID             string = "header.trailer-1"
-	ParameterContainerID string = "section.tab-contents"
+	HeaderID string = "header.trailer-1"
+	// ParameterContainerID string = "section.tab-contents"
+	ParameterContainerID string = "table.gptoolparamtbl:nth-child(3) tbody"
 	LicensingID          string = "div#_L"
-	EnumsID              string = "ul[purpose=enums]"
+	EnumsID              string = "ul[purpose=enums] li"
 	OptionalID           string = "div.paramhint"
-	// SignatureID          string = "pre.gpexpression"
-	SignatureID string = "pre[purpose=gptoolexpression]"
+	SignatureID          string = "pre[purpose=gptoolexpression]"
 )
 
-func NewScraper(c *colly.Collector) *Scraper {
-	return &Scraper{c: c}
-}
-
-type Scraper struct {
-	c *colly.Collector
-}
-
-func (s *Scraper) registerSignature() {
-	s.c.OnHTML(SignatureID, func(e *colly.HTMLElement) {
-		sel := e.DOM.Filter(SignatureID)
-		log.Trace().Any("selection", sel).Send()
-		result := sel.Text()
-		log.Trace().Str("result", result).Send()
+func Parse(c *colly.Collector, url string) (*gen.Generator, error) {
+	var data gen.Generator
+	c.OnHTML(HeaderID, func(h *colly.HTMLElement) {
+		data.FunctionName = h.Text
 	})
-}
-
-func Signature(e *colly.HTMLElement) string {
-	sel := e.DOM.Filter(SignatureID)
-	log.Trace().Any("selection", sel).Send()
-	result := sel.Text()
-	log.Trace().Str("result", result).Send()
-	return result
+	c.OnHTML(ParameterContainerID, func(h *colly.HTMLElement) {
+		h.ForEach("tr", func(i int, e *colly.HTMLElement) {
+			param := gen.Parameter{Required: true}
+			param.Name = e.Attr("paramname")
+			param.Comment = e.ChildText("td[purpose=gptoolparamdesc]")
+			enums := e.DOM.Find(EnumsID)
+			if len(enums.Nodes) > 0 {
+				enums.Each(func(_ int, enumOption *goquery.Selection) {
+					enumName := enumOption.Find("span[purpose=enumval]")
+					enumDesc := enumOption.Find("span[purpose=enumdesc]")
+					enum := gen.Enum{Name: enumName.Text(), Comment: enumDesc.Text()}
+					param.Enums = append(param.Enums, enum)
+				})
+			}
+			optionalTag := e.DOM.Find(OptionalID)
+			if len(optionalTag.Nodes) > 0 {
+				param.Required = false
+			}
+			data.Parameters = append(data.Parameters, param)
+		})
+	})
+	c.OnHTML(SignatureID, func(h *colly.HTMLElement) {
+		signatureArr := strings.Split(h.Text, "(")
+		data.Command = signatureArr[0]
+	})
+	err := c.Visit(url)
+	return &data, err
 }

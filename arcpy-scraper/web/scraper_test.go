@@ -4,34 +4,22 @@ import (
 	"testing"
 
 	"github.com/gocolly/colly"
+	"github.com/marcelo-fm/arcpy2go/gen"
 )
 
-func setupCollector(t *testing.T) *colly.Collector {
-	t.Helper()
+func TestParse(t *testing.T) {
+	testcase := gen.Generator{
+		FunctionName: "Create Table (Data Management)",
+	}
 	c := colly.NewCollector()
-	return c
-}
-
-func scrapePage(t *testing.T, c *colly.Collector) error {
-	var requestError error
-	t.Helper()
-	c.OnError(func(r *colly.Response, err error) {
-		requestError = err
-	})
-	c.Visit("https://pro.arcgis.com/en/pro-app/latest/tool-reference/data-management/create-table.htm")
-	return requestError
-}
-
-func TestSignature(t *testing.T) {
-	h, err := setupScrapedPage(t)
+	gen, err := Parse(c, "https://pro.arcgis.com/en/pro-app/latest/tool-reference/data-management/create-table.htm")
 	if err != nil {
-		t.Fatalf("Error in getting html Element: %v", err)
+		t.Fatalf("error in generating data: %v", err)
 	}
-	if h == nil {
-		t.Fatal("HTML element is empty")
+	if gen == nil {
+		t.Error("gen is nil, expected Generator struct")
 	}
-	sig := Signature(h)
-	if sig == "" {
-		t.Error("signature is empty")
+	if gen.FunctionName != testcase.FunctionName {
+		t.Errorf("exptected %s, got %s", testcase.FunctionName, gen.FunctionName)
 	}
 }
