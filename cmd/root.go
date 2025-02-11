@@ -24,7 +24,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
+	"github.com/gocolly/colly"
+	"github.com/marcelo-fm/arcpy2go/arcpy-scraper/web"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -34,16 +37,28 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "arcpy2go",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+	Short: "",
+	Args:  cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
+		var err error
+		url := args[0]
+		file := os.Stdout
+		if len(args) == 2 {
+			path := args[1]
+			dirpath := filepath.Dir(path)
+			err = os.MkdirAll(dirpath, 0755)
+			cobra.CheckErr(err)
+			file, err = os.Create(args[1])
+			cobra.CheckErr(err)
+		}
+		c := colly.NewCollector(
+			// colly.AllowedDomains("https://pro.arcgis.com"),
+			colly.CacheDir(filepath.Join(viper.GetString("appConfigDir"), "cache")),
+		)
+		data, err := web.Parse(c, url)
+		cobra.CheckErr(err)
+		err = data.Render(file)
+		cobra.CheckErr(err)
 	},
 }
 
@@ -58,16 +73,6 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.arcpy2go.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -76,14 +81,18 @@ func initConfig() {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
+		// Find homeConfigDir directory.
+		homeConfigDir, err := os.UserConfigDir()
 		cobra.CheckErr(err)
 
 		// Search config in home directory with name ".arcpy2go" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".arcpy2go")
+		appConfigDir := filepath.Join(homeConfigDir, "arcpy2go")
+		err = os.MkdirAll(filepath.Join(appConfigDir, "cache"), 0755)
+		cobra.CheckErr(err)
+		viper.Set("appConfigDir", appConfigDir)
+		viper.AddConfigPath(appConfigDir)
+		viper.SetConfigType("toml")
+		viper.SetConfigName("config")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
