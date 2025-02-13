@@ -6,6 +6,8 @@ import (
 	"strings"
 	"text/template"
 	"unicode"
+
+	"github.com/spf13/viper"
 )
 
 //go:embed template.go.tmpl
@@ -28,12 +30,14 @@ type Enum struct {
 }
 
 type Generator struct {
+	PackageName  string
 	FunctionName string
 	Command      string
 	Parameters   []Parameter
 }
 
 func (f Generator) Render(w io.Writer) error {
+	f.PackageName = viper.GetString("packageName")
 	return tmpl.Execute(w, f)
 }
 

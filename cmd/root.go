@@ -22,7 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -37,8 +36,13 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "arcpy2go",
-	Short: "",
-	Args:  cobra.RangeArgs(1, 2),
+	Short: "parse an arcpy tool documentation from the url provided",
+	Long: `arcpy2go scrapes arcpy tool documentation from the the <url> provided
+in the first argument, and create a go file with the arcpy tool. passing a <path>
+as the second argument saves the go file.
+Usage:
+  arcpy2go <url> <path>(optional)`,
+	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 		url := args[0]
@@ -52,7 +56,6 @@ var rootCmd = &cobra.Command{
 			cobra.CheckErr(err)
 		}
 		c := colly.NewCollector(
-			// colly.AllowedDomains("https://pro.arcgis.com"),
 			colly.CacheDir(filepath.Join(viper.GetString("appConfigDir"), "cache")),
 		)
 		data, err := web.Parse(c, url)
@@ -73,32 +76,28 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	rootCmd.Flags().BoolP("package", "p", false, "saves the file in a package in <path>. default (.)")
+	viper.BindPFlag("package", rootCmd.Flags().Lookup("package"))
+	rootCmd.Flags().String("package-name", "arcpy", "name of the package of the go file generated")
+	viper.BindPFlag("packageName", rootCmd.Flags().Lookup("package-name"))
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	homeConfigDir, err := os.UserConfigDir()
+	cobra.CheckErr(err)
+	appConfigDir := filepath.Join(homeConfigDir, "arcpy2go")
+	err = os.MkdirAll(filepath.Join(appConfigDir, "cache"), 0755)
+	cobra.CheckErr(err)
+	viper.Set("appConfigDir", appConfigDir)
 	if cfgFile != "" {
-		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find homeConfigDir directory.
-		homeConfigDir, err := os.UserConfigDir()
-		cobra.CheckErr(err)
-
-		// Search config in home directory with name ".arcpy2go" (without extension).
-		appConfigDir := filepath.Join(homeConfigDir, "arcpy2go")
-		err = os.MkdirAll(filepath.Join(appConfigDir, "cache"), 0755)
-		cobra.CheckErr(err)
-		viper.Set("appConfigDir", appConfigDir)
 		viper.AddConfigPath(appConfigDir)
 		viper.SetConfigType("toml")
 		viper.SetConfigName("config")
 	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-	}
+	viper.SetEnvPrefix("arcpy2go")
+	viper.AutomaticEnv()
+	viper.ReadInConfig()
 }
