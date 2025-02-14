@@ -10,7 +10,7 @@ import (
 type {{.FunctionName}} struct {
   {{range .Parameters -}}
   // {{.Comment}}
-  {{.Name | camelCase}} {{if not .Required}}*{{end}}string
+  {{.Name | camelCase}} {{if not .Required}}*{{end}}{{if len .Enums}}{{.Name | camelCase}}{{else}}string{{end}}
   {{end}}
 }
 
@@ -26,8 +26,22 @@ func (p *{{.FunctionName}}) Args() string {
   var params []string
   {{range .Parameters -}}
   {{- if not .Required}}if p.{{.Name | camelCase}} != nil { {{end -}}
-  params = append(params, fmt.Sprintf("{{.Name}}='%s'", {{- if not .Required -}}*{{- end -}}p.{{ .Name | camelCase}}))
+  params = append(params, fmt.Sprintf("{{.Name}}='%s'", {{if not .Required}}*{{end}}p.{{ .Name | camelCase}}))
   {{- if not .Required}} } {{end}}
   {{end -}}
   return strings.Join(params, ",")
 }
+
+{{- range .Parameters}}
+{{- if len .Enums}}
+type {{.Name | camelCase}} string
+{{$paramName := .Name}}
+const (
+{{range .Enums -}}
+// {{.Comment}}
+{{.Name}} {{$paramName | camelCase}} = "{{.Name}}"
+{{end -}}
+)
+{{- end -}}
+{{- end -}}
+
