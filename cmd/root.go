@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -47,18 +48,25 @@ Usage:
 		var err error
 		url := args[0]
 		file := os.Stdout
-		if len(args) == 2 {
-			path := args[1]
-			dirpath := filepath.Dir(path)
-			err = os.MkdirAll(dirpath, 0755)
-			cobra.CheckErr(err)
-			file, err = os.Create(args[1])
-			cobra.CheckErr(err)
-		}
 		c := colly.NewCollector(
 			colly.CacheDir(filepath.Join(viper.GetString("appConfigDir"), "cache")),
 		)
 		data, err := web.Parse(c, url)
+		if len(args) == 2 {
+			path := args[1]
+			filepathname := args[1]
+			if viper.GetBool("package") {
+				err = os.MkdirAll(args[1], 0755)
+				cobra.CheckErr(err)
+				filepathname = filepath.Join(args[1], fmt.Sprintf("%s.go", data.FunctionName))
+			} else {
+				dirpath := filepath.Dir(path)
+				err = os.MkdirAll(dirpath, 0755)
+				cobra.CheckErr(err)
+			}
+			file, err = os.Create(filepathname)
+			cobra.CheckErr(err)
+		}
 		cobra.CheckErr(err)
 		err = data.Render(file)
 		cobra.CheckErr(err)
@@ -76,7 +84,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.Flags().BoolP("package", "p", false, "saves the file in a package in <path>. default (.)")
+	rootCmd.Flags().BoolP("package", "p", false, "saves the file in a package in <path> with the --package-name as folder. default (.)")
 	viper.BindPFlag("package", rootCmd.Flags().Lookup("package"))
 	rootCmd.Flags().String("package-name", "arcpy", "name of the package of the go file generated")
 	viper.BindPFlag("packageName", rootCmd.Flags().Lookup("package-name"))

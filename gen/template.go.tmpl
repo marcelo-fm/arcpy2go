@@ -6,6 +6,7 @@ import (
   "strings"
 )
 
+// {{.FunctionComment}}
 type {{.FunctionName}} struct {
   {{range .Parameters -}}
   // {{.Comment}}
@@ -25,7 +26,8 @@ func (p *{{.FunctionName}}) Args() string {
   var params []string
   {{range .Parameters -}}
   {{- if not .Required}}if p.{{.Name | camelCase}} != nil { {{end -}}
-  params = append(params, fmt.Sprintf("{{.Name}}='%s'", p.{{ .Name | camelCase}}))
+  params = append(params, fmt.Sprintf("{{.Name}}='%s'", {{- if not .Required -}}*{{- end -}}p.{{ .Name | camelCase}}))
   {{- if not .Required}} } {{end}}
   {{end -}}
+  return strings.Join(params, ",")
 }

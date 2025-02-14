@@ -21,19 +21,19 @@ const (
 func Parse(c *colly.Collector, url string) (*gen.Generator, error) {
 	var data gen.Generator
 	c.OnHTML(HeaderID, func(h *colly.HTMLElement) {
-		data.FunctionName = h.Text
+		data.FunctionComment = h.Text
 	})
 	c.OnHTML(ParameterContainerID, func(h *colly.HTMLElement) {
 		h.ForEach("tr", func(i int, e *colly.HTMLElement) {
 			param := gen.Parameter{Required: true}
 			param.Name = e.Attr("paramname")
-			param.Comment = e.ChildText("td[purpose=gptoolparamdesc]")
+			param.Comment = strings.ReplaceAll(e.ChildText("td[purpose=gptoolparamdesc]"), "\n", " ")
 			enums := e.DOM.Find(EnumsID)
 			if len(enums.Nodes) > 0 {
 				enums.Each(func(_ int, enumOption *goquery.Selection) {
 					enumName := enumOption.Find("span[purpose=enumval]")
 					enumDesc := enumOption.Find("span[purpose=enumdesc]")
-					enum := gen.Enum{Name: enumName.Text(), Comment: enumDesc.Text()}
+					enum := gen.Enum{Name: enumName.Text(), Comment: strings.ReplaceAll(enumDesc.Text(), "\n", " ")}
 					param.Enums = append(param.Enums, enum)
 				})
 			}
@@ -47,6 +47,8 @@ func Parse(c *colly.Collector, url string) (*gen.Generator, error) {
 	c.OnHTML(SignatureID, func(h *colly.HTMLElement) {
 		signatureArr := strings.Split(h.Text, "(")
 		data.Command = signatureArr[0]
+		commandArr := strings.Split(signatureArr[0], ".")
+		data.FunctionName = commandArr[len(commandArr)-1]
 	})
 	err := c.Visit(url)
 	return &data, err
