@@ -9,7 +9,7 @@ import (
 
 func TestParse(t *testing.T) {
 	testcase := gen.Generator{
-		FunctionName: "Create Table (Data Management)",
+		FunctionComment: "Create Table (Data Management)",
 	}
 	c := colly.NewCollector()
 	gen, err := Parse(c, "https://pro.arcgis.com/en/pro-app/latest/tool-reference/data-management/create-table.htm")
@@ -19,7 +19,7 @@ func TestParse(t *testing.T) {
 	if gen == nil {
 		t.Error("gen is nil, expected Generator struct")
 	}
-	if gen.FunctionName != testcase.FunctionName {
-		t.Errorf("exptected %s, got %s", testcase.FunctionName, gen.FunctionName)
+	if gen.FunctionComment != testcase.FunctionComment {
+		t.Errorf("exptected %s, got %s", testcase.FunctionComment, gen.FunctionComment)
 	}
 }
