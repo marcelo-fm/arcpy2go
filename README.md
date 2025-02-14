@@ -23,4 +23,4 @@ directive:
 go get -tool github.com/marcelo-fm/arcpy2go@latest
 ```
 
-and then call it with `go tool arcpy2go`
+and then call it with `go tool arcpy2go`.
