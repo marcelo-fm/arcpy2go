@@ -6,11 +6,12 @@ import (
   "strings"
 )
 
+{{$prefix := .FunctionName}}
 // {{.FunctionComment}}
 type {{.FunctionName}} struct {
   {{range .Parameters -}}
   // {{.Comment}}
-  {{.Name | camelCase}} {{if not .Required}}*{{end}}{{if len .Enums}}{{.Name | camelCase}}{{else}}string{{end}}
+  {{.Name | camelCase}} {{if not .Required}}*{{end}}{{if len .Enums}}{{$prefix}}{{.Name | camelCase}}{{else}}string{{end}}
   {{end}}
 }
 
@@ -32,7 +33,6 @@ func (p *{{.FunctionName}}) Args() string {
   return strings.Join(params, ",")
 }
 
-{{$prefix := .FunctionName}}
 {{- range .Parameters}}
 {{- if len .Enums}}
 type {{$prefix}}{{.Name | camelCase}} string
