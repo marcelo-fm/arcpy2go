@@ -32,14 +32,15 @@ func (p *{{.FunctionName}}) Args() string {
   return strings.Join(params, ",")
 }
 
+{{$prefix := .FunctionName}}
 {{- range .Parameters}}
 {{- if len .Enums}}
-type {{.Name | camelCase}} string
+type {{$prefix}}{{.Name | camelCase}} string
 {{$paramName := .Name}}
 const (
 {{range .Enums -}}
 // {{.Comment}}
-{{.Name}} {{$paramName | camelCase}} = "{{.Name}}"
+{{$prefix}}{{.Name | camelCase}} {{$prefix}}{{$paramName | camelCase}} = "{{.Name}}"
 {{end -}}
 )
 {{- end -}}

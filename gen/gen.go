@@ -46,7 +46,8 @@ func CamelCase(str string) string {
 	var camelCase string
 	strArr := strings.Split(str, "_")
 	for i, word := range strArr {
-		wordByte := []byte(word)
+		wordLower := strings.ToLower(word)
+		wordByte := []byte(wordLower)
 		wordByte[0] = byte(unicode.ToUpper(rune(word[0])))
 		strArr[i] = string(wordByte)
 	}
