@@ -40,7 +40,7 @@ type {{$prefix}}{{.Name | camelCase}} string
 const (
 {{range .Enums -}}
 // {{.Comment}}
-{{$prefix}}{{.Name | camelCase}} {{$prefix}}{{$paramName | camelCase}} = "{{.Name}}"
+{{$prefix}}{{$paramName | camelCase}}{{.Name | camelCase}} {{$prefix}}{{$paramName | camelCase}} = "{{.Name}}"
 {{end -}}
 )
 {{- end -}}
