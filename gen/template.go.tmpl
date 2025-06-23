@@ -15,15 +15,15 @@ type {{.FunctionName}} struct {
   {{end}}
 }
 
-func (p *{{.FunctionName}}) Name() string {
+func (p {{.FunctionName}}) Name() string {
     return "{{.Command}}"
 }
 
-func (p *{{.FunctionName}}) Command() string {
+func (p {{.FunctionName}}) Command() string {
     return fmt.Sprintf("%s(%s)", p.Name(), p.Args())
 }
 
-func (p *{{.FunctionName}}) Args() string {
+func (p {{.FunctionName}}) Args() string {
   var params []string
   {{range .Parameters -}}
   {{- if not .Required}}if p.{{.Name | camelCase}} != nil { {{end -}}
