@@ -13,6 +13,8 @@ type {{.FunctionName}} struct {
   // {{.Comment}}
   {{.Name | camelCase}} {{if not .Required}}*{{end}}{{if len .Enums}}{{$prefix}}{{.Name | camelCase}}{{else}}string{{end}}
   {{end}}
+  // Comments are not part of the arcpy function signature, but are used to add additional information to the generated code.
+  Comments []string
 }
 
 func (p {{.FunctionName}}) Name() string {
@@ -21,6 +23,14 @@ func (p {{.FunctionName}}) Name() string {
 
 func (p {{.FunctionName}}) Command() string {
     return fmt.Sprintf("%s(%s)", p.Name(), p.Args())
+}
+
+func (p {{.FunctionName}}) CommentsString() string {
+  return strings.Join(p.Comments, "\n")
+}
+
+func (p {{.FunctionName}}) String() string {
+  return p.Command()
 }
 
 func (p {{.FunctionName}}) Args() string {
