@@ -21,8 +21,87 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/marcelo-fm/arcpy2go/cmd"
+import (
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/gocolly/colly"
+	"github.com/marcelo-fm/arcpy2go/arcpy-scraper/web"
+)
+
+const defaultPackageName = "arcpy"
 
 func main() {
-	cmd.Execute()
+	packageMode := flag.Bool("package", false, "saves the file in a package folder named after the tool")
+	packageName := flag.String("package-name", defaultPackageName, "name of the package of the generated Go file")
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [flags] <url> [path]\n\n", os.Args[0])
+		fmt.Fprintln(flag.CommandLine.Output(), "Flags:")
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	args := flag.Args()
+	if len(args) < 1 || len(args) > 2 {
+		flag.Usage()
+		os.Exit(2)
+	}
+
+	url := args[0]
+	file := os.Stdout
+
+	homeConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	appConfigDir := filepath.Join(homeConfigDir, "arcpy2go")
+	cacheDir := filepath.Join(appConfigDir, "cache")
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	c := colly.NewCollector(
+		colly.CacheDir(cacheDir),
+	)
+
+	data, err := web.Parse(c, url)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	data.PackageName = *packageName
+
+	if len(args) == 2 {
+		path := args[1]
+		filePath := path
+		if *packageMode {
+			if err := os.MkdirAll(path, 0755); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			filePath = filepath.Join(path, fmt.Sprintf("%s.go", data.FunctionName))
+		} else {
+			dirPath := filepath.Dir(path)
+			if err := os.MkdirAll(dirPath, 0755); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+		}
+
+		file, err = os.Create(filePath)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		defer file.Close()
+	}
+
+	if err := data.Render(file); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }

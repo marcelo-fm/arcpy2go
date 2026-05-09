@@ -8,6 +8,9 @@ This little program generates Go code from a documentation of a arcpy tool.
 This enables the creation of Go programs that output python code that uses arcpy
 code.
 
+The CLI is intentionally minimal and uses the standard library `flag` package
+instead of Cobra or Viper.
+
 ## Installation
 
 To install this program in your computer, you can use the `go install`command.

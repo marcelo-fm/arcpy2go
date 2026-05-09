@@ -6,8 +6,6 @@ import (
 	"strings"
 	"text/template"
 	"unicode"
-
-	"github.com/spf13/viper"
 )
 
 //go:embed template.go.tmpl
@@ -38,7 +36,9 @@ type Generator struct {
 }
 
 func (f Generator) Render(w io.Writer) error {
-	f.PackageName = viper.GetString("packageName")
+	if f.PackageName == "" {
+		f.PackageName = "arcpy"
+	}
 	return tmpl.Execute(w, f)
 }
 

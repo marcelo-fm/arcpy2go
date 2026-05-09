@@ -4,8 +4,6 @@ go 1.23.2
 
 require (
 	github.com/gocolly/colly v1.2.0
-	github.com/spf13/cobra v1.8.1
-	github.com/spf13/viper v1.19.0
 )
 
 require (
