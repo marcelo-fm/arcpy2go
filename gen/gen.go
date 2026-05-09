@@ -28,11 +28,13 @@ type Enum struct {
 }
 
 type Generator struct {
-	PackageName     string
-	FunctionName    string
-	FunctionComment string
-	Command         string
-	Parameters      []Parameter
+	PackageName          string
+	FunctionName         string
+	FunctionComment      string
+	Command              string
+	IsAssignment         bool
+	AssignmentValueParam string
+	Parameters           []Parameter
 }
 
 func (f Generator) Render(w io.Writer) error {

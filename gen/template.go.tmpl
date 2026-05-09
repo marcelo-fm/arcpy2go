@@ -22,7 +22,11 @@ func (p {{.FunctionName}}) Name() string {
 }
 
 func (p {{.FunctionName}}) Command() string {
+  {{- if .IsAssignment }}
+  return fmt.Sprintf("%s = %s", p.Name(), p.Args())
+  {{- else }}
     return fmt.Sprintf("%s(%s)", p.Name(), p.Args())
+  {{- end }}
 }
 
 func (p {{.FunctionName}}) CommentsString() string {
@@ -34,6 +38,9 @@ func (p {{.FunctionName}}) String() string {
 }
 
 func (p {{.FunctionName}}) Args() string {
+	{{- if .IsAssignment }}
+  return p.{{.AssignmentValueParam | camelCase}}
+	{{- else }}
   var params []string
   {{range .Parameters -}}
   {{- if not .Required}}if p.{{.Name | camelCase}} != nil { {{end -}}
@@ -41,6 +48,7 @@ func (p {{.FunctionName}}) Args() string {
   {{- if not .Required}} } {{end}}
   {{end -}}
   return strings.Join(params, ",")
+	{{- end }}
 }
 
 {{- range .Parameters}}
