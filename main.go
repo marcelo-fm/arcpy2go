@@ -36,6 +36,7 @@ const defaultPackageName = "arcpy"
 func main() {
 	packageMode := flag.Bool("package", false, "saves the file in a package folder named after the tool")
 	packageName := flag.String("package-name", defaultPackageName, "name of the package of the generated Go file")
+	language := flag.String("language", "go", "output language: go or python")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [flags] <url> [path]\n\n", os.Args[0])
 		fmt.Fprintln(flag.CommandLine.Output(), "Flags:")
@@ -83,7 +84,11 @@ func main() {
 				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)
 			}
-			filePath = filepath.Join(path, fmt.Sprintf("%s.go", data.FunctionName))
+			ext := "go"
+			if *language == "python" {
+				ext = "py"
+			}
+			filePath = filepath.Join(path, fmt.Sprintf("%s.%s", data.FunctionName, ext))
 		} else {
 			dirPath := filepath.Dir(path)
 			if err := os.MkdirAll(dirPath, 0755); err != nil {
@@ -100,8 +105,15 @@ func main() {
 		defer file.Close()
 	}
 
-	if err := data.Render(file); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	if *language == "python" {
+		if err := data.RenderPython(file); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	} else {
+		if err := data.Render(file); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 }

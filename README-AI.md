@@ -202,3 +202,44 @@ As demais dependências em [go.mod](go.mod) são transitivas ou de suporte.
 ## Objetivo final do projeto
 
 O propósito do arcpy2go é permitir que a documentação do ArcPy seja convertida em structs Go reutilizáveis, com saída textual compatível com a chamada da ferramenta original. Isso facilita criar código Go que emite comandos ArcPy sem precisar reescrever manualmente a estrutura de cada ferramenta.
+
+## Geração Python (novo)
+
+O projeto agora suporta gerar classes Python que montam o texto do comando ArcPy, usando a mesma estrutura extraída pelo scraper (`gen.Generator`). Principais decisões adotadas:
+
+- Estilo: `@dataclass` com type hints.
+- Enums: classes derivadas de `enum.Enum`.
+- Organização: um arquivo por ferramenta (ex.: `CreateTable.py`).
+
+Uso da CLI:
+
+ - Gerar Go (padrão):
+
+```
+arcpy2go --language=go <url> [path]
+```
+
+ - Gerar Python:
+
+```
+arcpy2go --language=python <url> [path]
+```
+
+Se a flag `--package` for usada, o gerador criará o arquivo dentro da pasta passada e aplicará a extensão apropriada (`.go` ou `.py`).
+
+O template Python (`gen/template.py.tmpl`) gera:
+
+- Uma `@dataclass` com um campo por parâmetro extraído (parâmetros opcionais recebem `None` como default).
+- Métodos `name()` e `command()` (e `__str__`) que montam a chamada ArcPy em texto, igual ao gerador Go.
+- Enums como `enum.Enum` com nomes de membro convertidos para UPPER_SNAKE.
+
+Validação rápida:
+
+1. Gere um arquivo Python com `--language=python`.
+2. Valide sintaxe: `python -m py_compile CreateTable.py`.
+3. Instancie a classe no REPL e chame `str(obj)` para obter a string do comando.
+
+Notas:
+
+- Os parsers mantêm-se agnósticos à linguagem; qualquer ajuste de nomes de atributos (snake_case vs CamelCase) pode ser feito no template Python se desejar outro estilo.
+- Testes unitários para `RenderPython` foram adicionados em `gen/gen_test.go`.
